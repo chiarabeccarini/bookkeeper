@@ -109,4 +109,35 @@ public class BufferedChannelTest {
         assertTrue(fileChannel.position() > 0);
     }
 
+    //test LLM
+    /* verifica il comportamento del metodo write quando il buffer di input (src)
+     * è più grande della capacità del canale writeBuffer, ma non è un multiplo esatto.
+     */
+    @Test
+    public void testReadAfterFlushReturnsCorrectData() throws IOException {
+        ByteBuffer writeBuffer = ByteBuffer.wrap("12345678".getBytes());
+        bufferedChannel.write(writeBuffer);
+        bufferedChannel.flush(false);
+
+        ByteBuffer readBuffer = ByteBuffer.allocate(8);
+        int bytesRead = bufferedChannel.read(readBuffer, 0);
+
+        assertEquals(8, bytesRead);
+        readBuffer.flip();
+        assertEquals("12345678", new String(readBuffer.array()));
+    }
+
+    /* verifica il comportamento del metodo read quando il canale è vuoto.
+     * In questo caso, ci aspettiamo che il metodo restituisca 0.
+     */
+    @Test(expected = IOException.class)
+    public void testReadPastEOFThrowsException() throws IOException {
+        ByteBuffer writeBuffer = ByteBuffer.wrap("1234".getBytes());
+        bufferedChannel.write(writeBuffer);
+        bufferedChannel.flush(false);
+
+        ByteBuffer readBuffer = ByteBuffer.allocate(10); // più del disponibile
+        bufferedChannel.read(readBuffer, 0);
+    }
+
 }
