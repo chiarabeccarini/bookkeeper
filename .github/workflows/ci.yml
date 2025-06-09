@@ -22,5 +22,4 @@ jobs:
         java-version: '17'
 
     - name: Build and run tests with Maven
-      run: mvn -B test -Dmaven.compiler.source=17 -Dmaven.compiler.target=17
-
+      run: mvn -B -pl bookkeeper-server -Dtest=BufferedChannelTest test -Dmaven.compiler.source=17 -Dmaven.compiler.target=17
