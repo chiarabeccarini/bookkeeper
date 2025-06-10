@@ -109,9 +109,13 @@ public class BufferedChannelTest {
         assertTrue(fileChannel.position() > 0);
     }
 
-    //test LLM
-    /* verifica il comportamento del metodo write quando il buffer di input (src)
+    //============== test LLM ==================
+    // ZERO SHOT
+
+    /**
+     * verifica il comportamento del metodo write quando il buffer di input (src)
      * è più grande della capacità del canale writeBuffer, ma non è un multiplo esatto.
+     * VERIFICA LA LETTURA DOPO UNA SCRITTURA E FLUSH
      */
     @Test
     public void testReadAfterFlushReturnsCorrectData() throws IOException {
@@ -127,8 +131,10 @@ public class BufferedChannelTest {
         assertEquals("12345678", new String(readBuffer.array()));
     }
 
-    /* verifica il comportamento del metodo read quando il canale è vuoto.
+    /**
+     * verifica il comportamento del metodo read quando il canale è vuoto.
      * In questo caso, ci aspettiamo che il metodo restituisca 0.
+     * CORNER CASE: PROVARE A LEGGERE PIÙ DI QUANTO SCRITTO
      */
     @Test(expected = IOException.class)
     public void testReadPastEOFThrowsException() throws IOException {
@@ -138,6 +144,104 @@ public class BufferedChannelTest {
 
         ByteBuffer readBuffer = ByteBuffer.allocate(10); // più del disponibile
         bufferedChannel.read(readBuffer, 0);
+    }
+
+    // FEW SHOT
+    /**
+     * Verifica che la scrittura seguita da flush aggiorni correttamente la dimensione del file.
+     */
+    @Test
+    public void testWriteAndFlushUpdatesFileSize() throws IOException {
+        ByteBuffer buffer = ByteBuffer.wrap("ABCDEFGH".getBytes()); // 8 byte
+        int written = bufferedChannel.write(buffer);
+        assertEquals(8, written);
+
+        // prima del flush: il file non dovrebbe contenere dati
+        assertEquals(0, fileChannel.size());
+
+        bufferedChannel.flush(true);
+
+        // dopo il flush: la dimensione del file deve essere aggiornata
+        assertEquals(8, fileChannel.size());
+    }
+
+    /**
+     * Verifica che una scrittura oltre la capacità del buffer attivi un flush automatico.
+     */
+    @Test
+    public void testWriteBeyondBufferCapacityTriggersFlush() throws IOException {
+        ByteBuffer buffer = ByteBuffer.wrap("ABCDEFGHIJKL".getBytes()); // 12 byte > 1024
+        int written = bufferedChannel.write(buffer);
+        assertEquals(12, written);
+
+        // La posizione interna dovrebbe riflettere i byte scritti
+        assertEquals(12, bufferedChannel.position());
+
+        bufferedChannel.flush(false);
+        assertEquals(12, fileChannel.size());
+    }
+
+    /**
+     * Verifica la lettura parziale da un offset specifico.
+     */
+    @Test
+    public void testPartialRead() throws IOException {
+        bufferedChannel.write(ByteBuffer.wrap("ABCDEFGH".getBytes()));
+        bufferedChannel.flush(false);
+
+        ByteBuffer partialBuffer = ByteBuffer.allocate(4);
+        int bytesRead = bufferedChannel.read(partialBuffer, 2); // da offset 2
+
+        assertEquals(4, bytesRead);
+        partialBuffer.flip();
+        assertEquals("CDEF", new String(partialBuffer.array()));
+    }
+
+    /**
+     * Verifica che scritture e flush consecutivi mantengano i dati correttamente.
+     */
+    @Test
+    public void testMultipleWritesAndFlushes() throws IOException {
+        bufferedChannel.write(ByteBuffer.wrap("ABCD".getBytes()));
+        bufferedChannel.flush(false);
+
+        bufferedChannel.write(ByteBuffer.wrap("EFGH".getBytes()));
+        bufferedChannel.flush(false);
+
+        ByteBuffer readBuffer = ByteBuffer.allocate(8);
+        int read = bufferedChannel.read(readBuffer, 0);
+
+        assertEquals(8, read);
+        readBuffer.flip();
+        assertEquals("ABCDEFGH", new String(readBuffer.array()));
+    }
+
+    /**
+     * Verifica che il metodo getFileChannel restituisca il canale corretto.
+     */
+    @Test
+    public void testGetFileChannel() {
+        assertSame(fileChannel, bufferedChannel.getFileChannel());
+    }
+
+    /**
+     * Verifica che position() venga aggiornato correttamente dopo la scrittura.
+     */
+    @Test
+    public void testPositionAfterWrite() throws IOException {
+        ByteBuffer buffer = ByteBuffer.wrap("HELLO".getBytes());
+        bufferedChannel.write(buffer);
+        assertEquals(5, bufferedChannel.position());
+    }
+
+    /**
+     * Verifica che size() restituisca la dimensione corretta dopo flush.
+     */
+    @Test
+    public void testSizeReflectsFileChannelSize() throws IOException {
+        bufferedChannel.write(ByteBuffer.wrap("Test123".getBytes()));
+        bufferedChannel.flush(false);
+        assertEquals(7, bufferedChannel.size());
     }
 
 }
