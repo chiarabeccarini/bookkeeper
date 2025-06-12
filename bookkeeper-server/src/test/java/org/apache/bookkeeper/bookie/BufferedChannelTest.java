@@ -36,7 +36,8 @@ public class BufferedChannelTest {
         tempFile.delete();
     }
 
-    /** Test 1 Write: Scrittura di buffer vuoto
+    /**
+     * Test 1 Write: Scrittura di buffer vuoto
      * crea un ByteBuffer vuoto con capacità 0, chiama write
      * e verifica che la scrittura restituisca 0, cioè nessun byte è stato scritto.
      */
@@ -47,7 +48,8 @@ public class BufferedChannelTest {
         assertEquals(0, bytesWritten);
     }
 
-    /** Test 2 Write: Scrittura inferiore alla capacity
+    /**
+     * Test 2 Write: Scrittura inferiore alla capacity
      * crea un ByteBuffer da 512 byte, quindi di dimensione inferiore alla capacità del buffer,
      * lo riempie con byte fittizzi usando il metodo fillBuffer,
      * chiama write e verifica che il numero di byte scritti sia 512.
@@ -60,7 +62,8 @@ public class BufferedChannelTest {
         assertEquals(512, bytesWritten);
     }
 
-    /** Test 3 Write: Scrittura esattamente pari alla capacity
+    /**
+     * Test 3 Write: Scrittura esattamente pari alla capacity
      * crea un ByteBuffer con capacità esattamente pari a BUFFER_CAPACITY,
      * lo riempie con byte fittizi e chiama write, verificando che il numero di byte scritti sia uguale a BUFFER_CAPACITY.
      */
@@ -72,7 +75,8 @@ public class BufferedChannelTest {
         assertEquals(BUFFER_CAPACITY, bytesWritten);
     }
 
-    /** Test 4 Write: Scrittura oltre la capacity
+    /**
+     * Test 4 Write: Scrittura oltre la capacity
      * crea un ByteBuffer con capacità doppia rispetto a BUFFER_CAPACITY,
      * lo riempie con byte fittizi e chiama write,
      * verificando che il numero di byte scritti sia pari a 2 * BUFFER_CAPACITY.
@@ -87,7 +91,8 @@ public class BufferedChannelTest {
         assertEquals(2 * BUFFER_CAPACITY, bytesWritten);
     }
 
-    /** Test 5 Write: Passaggio di buffer null
+    /**
+     * Test 5 Write: Passaggio di buffer null
      * verifica che se chiami write con un buffer null, venga sollevata una NullPointerException.
      * JUnit si aspetta che il metodo write lanci questa eccezione, se arriva, il test passa.
      */
@@ -103,8 +108,6 @@ public class BufferedChannelTest {
         }
         buffer.flip(); // Prepara il buffer per la lettura da parte di write()
     }
-
-
 
 
     // Test 1 Read: Lettura con buffer vuoto
@@ -142,7 +145,6 @@ public class BufferedChannelTest {
             assertTrue(e instanceof IOException || e instanceof IllegalArgumentException);
         }
     }
-
 
     // Test 4 Read: Buffer null
     @Test(expected = NullPointerException.class)
