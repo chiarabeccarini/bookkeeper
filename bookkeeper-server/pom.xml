@@ -16,7 +16,7 @@
    limitations under the License.
 -->
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>bookkeeper</artifactId>
@@ -32,7 +32,21 @@
     <project.libdir>${basedir}/lib</project.libdir>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
+    <evosuite.version>1.0.6</evosuite.version>
   </properties>
+  <repositories>
+    <repository>
+      <id>evosuite-repo</id>
+      <url>https://repo1.maven.org/maven2/</url>
+    </repository>
+    <repository>
+      <id>evosuite-snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
   <dependencies>
     <dependency>
       <groupId>com.google.protobuf</groupId>
@@ -46,9 +60,15 @@
       <version>13.0.1</version>
     </dependency>
     <dependency>
+      <groupId>org.evosuite</groupId>
+      <artifactId>evosuite-standalone-runtime</artifactId>
+      <version>${evosuite.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.8.1</version>
+      <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -103,7 +123,7 @@
     <!--
         Annoying dependency we need to include because
         zookeeper uses log4j and so we transatively do, but
-        log4j has some dependencies which aren't in the 
+        log4j has some dependencies which aren't in the
         default maven repositories
     //-->
     <dependency>
@@ -155,13 +175,32 @@
     </dependency>
   </dependencies>
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.evosuite.plugins</groupId>
+          <artifactId>evosuite-maven-plugin</artifactId>
+          <version>${evosuite.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M9</version>
         <configuration>
-          <skipTests>true</skipTests>
+          <properties>
+            <property>
+              <name>listener</name>
+              <value>org.evosuite.runtime.InitializingListener</value>
+            </property>
+          </properties>
+          <excludes>
+            <exclude>**/*_ESTest.java</exclude>
+            <exclude>**/*_ESTest_scaffolding.java</exclude>
+          </excludes>
         </configuration>
       </plugin>
       <plugin>
@@ -197,11 +236,11 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.11.0</version>
         <configuration>
-          <source>17</source>
-          <target>17</target>
-          <release>17</release>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
+
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.2.1</version>
@@ -239,24 +278,49 @@
             </goals>
             <configuration>
               <outputDirectory>${project.libdir}</outputDirectory>
-	      <includeScope>runtime</includeScope>
+              <includeScope>runtime</includeScope>
             </configuration>
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
         <version>2.5</version>
-	<configuration>
-	  <filesets>
+        <configuration>
+          <filesets>
             <fileset>
               <directory>${project.libdir}</directory>
               <followSymlinks>false</followSymlinks>
             </fileset>
-	  </filesets>
-	</configuration>
+          </filesets>
+        </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.evosuite.plugins</groupId>
+        <artifactId>evosuite-maven-plugin</artifactId>
+        <version>${evosuite.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+              <goal>export</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <targetClass>org.apache.bookkeeper.bookie.BufferedChannel</targetClass>
+          <criterion>branch</criterion>
+          <timeBudget>60</timeBudget>
+          <showProgress>true</showProgress>
+          <maxComplexity>5</maxComplexity>
+          <minimize>true</minimize>
+        </configuration>
+      </plugin>
+
+
     </plugins>
+
   </build>
   <profiles>
     <profile>
