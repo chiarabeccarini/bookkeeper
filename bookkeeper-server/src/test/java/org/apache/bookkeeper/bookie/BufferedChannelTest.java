@@ -152,4 +152,57 @@ public class BufferedChannelTest {
         bufferedChannel.read(null, 0); // provo a leggere con un buffer null, deve lanciare eccezione
     }
 
+
+
+
+
+    /** Test Flush: Scrittura e flush con sync = true
+     * Scrive 512 byte e chiama flush(true), verificando che non vengano lanciate eccezioni.
+     */
+    @Test
+    public void testFlushWithSync() throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(512);
+        fillBuffer(buffer);
+        int written = bufferedChannel.write(buffer);
+        assertEquals(512, written);
+        bufferedChannel.flush(true); // Verifica che non lanci eccezioni
+    }
+
+    /** Test Flush: Scrittura e flush con sync = false
+     * Scrive 512 byte e chiama flush(false), verificando che non ci siano errori.
+     */
+    @Test
+    public void testFlushWithoutSync() throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(512);
+        fillBuffer(buffer);
+        int written = bufferedChannel.write(buffer);
+        assertEquals(512, written);
+        bufferedChannel.flush(false); // Verifica che non lanci eccezioni
+    }
+
+    /** Test Position: Verifica che dopo la scrittura la posizione sia corretta
+     * Dopo aver scritto 512 byte, la posizione deve essere 512.
+     */
+    @Test
+    public void testPositionAfterWrite() throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(512);
+        fillBuffer(buffer);
+        bufferedChannel.write(buffer);
+        long pos = bufferedChannel.position();
+        assertEquals(512, pos);
+    }
+
+    /** Test Size: Verifica che la dimensione del file cresca dopo la scrittura
+     * Dopo aver scritto e flushato 512 byte, size() dovrebbe restituire almeno 512.
+     */
+    @Test
+    public void testSizeAfterWrite() throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(512);
+        fillBuffer(buffer);
+        bufferedChannel.write(buffer);
+        bufferedChannel.flush(true);
+        long size = bufferedChannel.size();
+        assertTrue(size >= 512); // Può essere maggiore, ma deve essere almeno 512
+    }
+
 }
