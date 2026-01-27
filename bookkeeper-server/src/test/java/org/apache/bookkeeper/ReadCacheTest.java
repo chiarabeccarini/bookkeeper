@@ -132,4 +132,41 @@ class ReadCacheTest {
             ReferenceCountUtil.release(entry);
         }
     }
+
+    @Test
+    void hasEntryIsFalseForDifferentKeys() {
+        cache = newCacheWithTwoSmallSegments();
+
+        byte[] payload = "value".getBytes();
+        putBytes(10L, 20L, payload);
+
+        assertTrue(cache.hasEntry(10L, 20L));
+        assertFalse(cache.hasEntry(10L, 21L), "Same ledgerId but different entryId must be absent");
+        assertFalse(cache.hasEntry(11L, 20L), "Different ledgerId but same entryId must be absent");
+    }
+
+    @Test
+    void putOnSameKeyOverwritesValueReturnedByGet() {
+        cache = newCacheWithTwoSmallSegments();
+
+        long ledgerId = 1L;
+        long entryId = 1L;
+
+        byte[] first = "first".getBytes();
+        byte[] second = "second".getBytes();
+
+        putBytes(ledgerId, entryId, first);
+        putBytes(ledgerId, entryId, second);
+
+        ByteBuf res = cache.get(ledgerId, entryId);
+        assertNotNull(res);
+        try {
+            byte[] out = new byte[res.readableBytes()];
+            res.readBytes(out);
+            assertArrayEquals(second, out, "Expected latest value to be returned for same key");
+        } finally {
+            ReferenceCountUtil.release(res);
+        }
+    }
+
 }

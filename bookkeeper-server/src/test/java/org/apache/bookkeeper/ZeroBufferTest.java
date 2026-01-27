@@ -77,4 +77,20 @@ class ZeroBufferTest {
         assertEquals(0, ro.get(length / 2));
         assertEquals(0, ro.get(length - 1));
     }
+
+    @Test
+    void putWithNegativeLengthDoesNothing() {
+        ByteBuffer dst = ByteBuffer.allocate(8);
+        dst.position(2);
+
+        ZeroBuffer.put(dst, -5);
+
+        // With negative length, the current implementation performs no writes.
+        assertEquals(2, dst.position(), "Position should not change for negative length");
+
+        // Ensure buffer content is still zero (fresh buffer is zero-initialized)
+        assertEquals(0, dst.get(0));
+        assertEquals(0, dst.get(7));
+    }
+
 }
